@@ -1,0 +1,46 @@
+target: "all,alertmanager,overrides-exporter"
+
+server:
+  log_level: "warn"
+  http_listen_port: 3300
+
+common:
+  storage:
+    backend: "s3"
+    s3:
+      endpoint: "minio:9000"
+      access_key_id: "accesskey"
+      secret_access_key: "supersecret"
+      insecure: true
+      bucket_name: "mimir"
+
+blocks_storage:
+  storage_prefix: "blocks"
+  tsdb:
+    dir: "/data/ingester"
+
+memberlist:
+  join_members:
+    - "mimir"
+
+store_gateway:
+  sharding_ring:
+    replication_factor: 1
+
+ingester:
+  ring:
+    replication_factor: 1
+
+ruler:
+  rule_path: "/data/ruler"
+  alertmanager_url: "http://localhost:3300/alertmanager"
+  ring:
+    heartbeat_period: "2s"
+    heartbeat_timeout: "10s"
+
+alertmanager:
+  data_dir: "/data/alertmanager"
+  fallback_config_file: "/etc/mimir/alertmanager-fallback-config.yaml"
+  external_url: "http://localhost:3300/alertmanager"
+  sharding_ring:
+    replication_factor: 1

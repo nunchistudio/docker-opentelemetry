@@ -1,0 +1,106 @@
+version: "2"
+
+services:
+  minio:
+    image: "minio/minio:latest"
+    restart: "unless-stopped"
+    entrypoint:
+      - "sh"
+      - "-euc"
+      - "mkdir -p /data/tempo /data/mimir /data/loki && /opt/bin/minio server --quiet --address 0.0.0.0:9000 --console-address ':9001' /data"
+    volumes:
+      - "./.data/minio:/data"
+    environment:
+      - "MINIO_ROOT_USER=accesskey"
+      - "MINIO_ROOT_PASSWORD=supersecret"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  mimir:
+    image: "grafana/mimir:latest"
+    restart: "unless-stopped"
+    command:
+      - "--config.file=/etc/mimir/server.yml"
+    volumes:
+      - "./mimir/config/server.yml:/etc/mimir/server.yml"
+      - "./mimir/config/alertmanager.yaml:/etc/mimir/alertmanager-fallback-config.yaml"
+    ports:
+      - "3300:3300"
+    depends_on:
+      - "minio"
+
+  prometheus:
+    image: "prom/prometheus:latest"
+    restart: "unless-stopped"
+    entrypoint:
+      - "/bin/prometheus"
+      - "--config.file=/etc/prometheus/server.yml"
+    volumes:
+      - "./prometheus/config/server.yml:/etc/prometheus/server.yml"
+    ports:
+      - "9090:9090"
+    depends_on:
+      - "mimir"
+
+  loki:
+    image: "grafana/loki:latest"
+    restart: "unless-stopped"
+    command: "-config.file=/etc/loki/server.yml"
+    volumes:
+      - "./loki/config/server.yml:/etc/loki/server.yml"
+    ports:
+      - "3100:3100"
+      - "7946"
+    depends_on:
+      - "minio"
+
+  tempo:
+    image: "grafana/tempo:latest"
+    restart: "unless-stopped"
+    command: "-config.file=/etc/tempo/server.yml"
+    volumes:
+      - "./tempo/config/server.yml:/etc/tempo/server.yml"
+    ports:
+      - "3200:3200"
+      - "3201:3201"
+      - "7946"
+    depends_on:
+      - "minio"
+
+  agent:
+    image: "grafana/agent:latest"
+    restart: "unless-stopped"
+    command:
+      - "--config.file=/etc/agent/config.yml"
+      - "--server.http.address=0.0.0.0:7020"
+    volumes:
+      - "/:/rootfs:ro"
+      - "/var/run:/var/run:ro"
+      - "/sys:/sys:ro"
+      - "/var/lib/docker/:/var/lib/docker:ro"
+      - "/dev/disk/:/dev/disk:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./agent/config/agent.yml:/etc/agent/config.yml"
+      - "./.data/agent:/etc/agent/data"
+    ports:
+      - "7020:7020"
+      - "7021:7021"
+    depends_on:
+      - "tempo"
+
+  grafana:
+    image: "grafana/grafana:latest"
+    restart: "unless-stopped"
+    volumes:
+      - "./grafana/config/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
+    environment:
+      - "GF_AUTH_ANONYMOUS_ENABLED=true"
+      - "GF_AUTH_ANONYMOUS_ORG_ROLE=Admin"
+      - "GF_AUTH_DISABLE_LOGIN_FORM=true"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - "mimir"
+      - "loki"
+      - "tempo"

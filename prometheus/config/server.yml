@@ -1,0 +1,27 @@
+global:
+  scrape_interval: "15s"
+  evaluation_interval: "15s"
+  external_labels:
+    cluster: "fake"
+    namespace: "fake"
+
+scrape_configs:
+  - job_name: "mimir"
+    static_configs:
+      - targets:
+        - "mimir:3300"
+
+  - job_name: "loki"
+    static_configs:
+      - targets:
+        - "loki:3100"
+
+  - job_name: "tempo"
+    static_configs:
+      - targets:
+        - "tempo:3200"
+
+remote_write:
+  - url: "http://mimir:3300/api/v1/push"
+    headers:
+      X-Scope-OrgID: "fake"

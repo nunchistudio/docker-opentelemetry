@@ -1,0 +1,20 @@
+titleAndCommits: true
+allowMergeCommits: true
+allowRevertCommits: true
+
+types:
+  - "docs"
+  - "feat"
+  - "fix"
+  - "refactor"
+  - "revert"
+  - "version"
+
+scopes:
+  - "docker"
+  - "agent"
+  - "grafana"
+  - "loki"
+  - "mimir"
+  - "prometheus"
+  - "tempo"
