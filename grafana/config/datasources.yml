@@ -55,8 +55,11 @@ datasources:
         datasourceUid: "loki"
         spanStartTimeShift: "1h"
         spanEndTimeShift: "-1h"
+        filterByTraceID: true
+        filterBySpanID: true
         tags:
-          - "service_name"
+          - key: "service.name"
+            value: "container"
       tracesToMetrics:
         datasourceUid: "mimir"
         spanStartTimeShift: "1h"
@@ -80,6 +83,6 @@ datasources:
     jsonData:
       derivedFields:
         - datasourceUid: "tempo"
-          matcherRegex: '(?:traceID|trace_id)=(\w+)'
+          matcherRegex: '"(?:traceID|trace_id)":"(\w+)"'
           name: "trace_id"
           url: "$${__value.raw}"
