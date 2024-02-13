@@ -7,7 +7,7 @@ services:
     entrypoint:
       - "sh"
       - "-euc"
-      - "mkdir -p /data/tempo /data/mimir /data/loki && /opt/bin/minio server --quiet --address 0.0.0.0:9000 --console-address ':9001' /data"
+      - "mkdir -p /data/tempo /data/mimir /data/loki && /usr/bin/docker-entrypoint.sh minio server --quiet --address 0.0.0.0:9000 --console-address ':9001' /data"
     volumes:
       - "./.data/minio:/data"
     environment:
